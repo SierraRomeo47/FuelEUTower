@@ -5,9 +5,9 @@ import { Download, MoreHorizontal, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 
 const ledgerData = [
-  { imo: '9123456', name: 'Albatross Explorer', energy: '45,120.50', intensity: '92.4', target: '89.34', icb: -4520.10, vcb: null, banked: 0, borrowed: 0 },
-  { imo: '9987654', name: 'Nordic Supplier', energy: '12,040.00', intensity: '87.1', target: '89.34', icb: +1200.50, vcb: +1200.50, banked: 450.00, borrowed: 0 },
-  { imo: '9345678', name: 'Pacific Horizon', energy: '88,900.20', intensity: '90.1', target: '89.34', icb: -890.00, vcb: null, banked: 0, borrowed: 800.00 },
+  { imo: '9434761', name: 'MV Baltic Horizon', energy: '41,820.00', intensity: '90.2', target: '89.34', icb: -3180.40, vcb: null, banked: 0, borrowed: 800.00 },
+  { imo: '9762214', name: 'MV Adriatic Pioneer', energy: '18,460.00', intensity: '88.4', target: '89.34', icb: +980.20, vcb: +980.20, banked: 0, borrowed: 0 },
+  { imo: '9385420', name: 'MT North Sea Progress', energy: '52,300.00', intensity: '89.9', target: '89.34', icb: -1240.00, vcb: null, banked: 0, borrowed: 0 },
 ];
 
 export default function ComplianceLedger() {

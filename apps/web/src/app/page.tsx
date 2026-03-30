@@ -18,21 +18,21 @@ const fleetData = [
 ];
 
 const initialVessels = [
-  { id: 'IMO9123456', name: 'Albatross Explorer', type: 'Container', icb: -4520.10, status: 'Deficit' },
-  { id: 'IMO9987654', name: 'Nordic Supplier', type: 'Bulker', icb: +1200.50, status: 'Compliant' },
-  { id: 'IMO9345678', name: 'Pacific Horizon', type: 'Tanker', icb: -890.00, status: 'Deficit' },
-  { id: 'IMO9221133', name: 'Atlantic Express', type: 'Container', icb: +560.20, status: 'Compliant' },
-  { id: 'IMO9554411', name: 'Global Voyager', type: 'Ro-Ro', icb: -2100.30, status: 'Deficit' },
+  { id: 'IMO9434761', name: 'MV Baltic Horizon', type: 'Container', icb: -3180.40, status: 'Deficit' },
+  { id: 'IMO9762214', name: 'MV Adriatic Pioneer', type: 'Ro-Ro', icb: +980.20, status: 'Compliant' },
+  { id: 'IMO9385420', name: 'MT North Sea Progress', type: 'Tanker', icb: -1240.00, status: 'Deficit' },
+  { id: 'IMO9521678', name: 'MV Iberian Link', type: 'Container', icb: +620.80, status: 'Compliant' },
+  { id: 'IMO9677743', name: 'MV Celtic Trader', type: 'Bulker', icb: -1715.60, status: 'Deficit' },
 ];
 
 export default function Dashboard() {
   const [mounted, setMounted] = useState(false);
   const [vesselList, setVesselList] = useState<any[]>(initialVessels);
   const [kpiData, setKpiData] = useState({
-    totalIcb: -5849.70,
-    totalAcb: 1760.70,
+    totalIcb: -4535.00,
+    totalAcb: 1601.00,
     penaltyExposure: 142500,
-    totalBorrowingCap: 18400.00
+    totalBorrowingCap: 17120.00
   });
   const router = useRouter();
 
@@ -140,16 +140,16 @@ export default function Dashboard() {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col hover:shadow-md transition-shadow">
           <h3 className="text-lg font-semibold text-slate-900 mb-6 border-b border-slate-100 pb-4">Flexibility Operations</h3>
           <div className="space-y-6 flex-1">
-            <MechanismRow label="Banked Surplus (2024)" value="+450.00" total="1760.70" color="bg-emerald-500" />
-            <MechanismRow label="Borrowed Amount" value="-800.00" total="18400.00" color="bg-amber-500" />
-            <MechanismRow label="Sub-Fleet Pool Transfer" value="+1200.00" total="5849.70" color="bg-blue-500" />
+            <MechanismRow label="Banked Surplus (2025)" value="+0.00" total={Math.max(Math.abs(kpiData.totalAcb), 1).toFixed(2)} color="bg-emerald-500" />
+            <MechanismRow label="Borrowed Amount (2025)" value="-800.00" total={Math.max(kpiData.totalBorrowingCap, 1).toFixed(2)} color="bg-amber-500" />
+            <MechanismRow label="Sub-Fleet Pool Transfer (2025)" value="+1200.00" total={Math.max(Math.abs(kpiData.totalIcb), 1).toFixed(2)} color="bg-blue-500" />
           </div>
             
           <div className="mt-8 p-4 bg-amber-50 rounded-xl border border-amber-200 flex gap-3 items-start shadow-sm">
             <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-amber-900 leading-relaxed">
               <span className="font-bold block mb-1">Consecutive Borrowing Block</span>
-              <p className="text-amber-800">2 vessels in deficit registered a borrow last year. Regulatory engine strictly prevents consecutive borrowing per IMO guidelines. Proceed with Pool routing instead.</p>
+              <p className="text-amber-800">Borrowing chains are blocked in consecutive reporting years for the same vessel. Route deficit balancing through eligible pool transfers instead.</p>
             </div>
           </div>
         </div>

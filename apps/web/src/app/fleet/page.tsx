@@ -6,12 +6,12 @@ import { toast } from 'sonner';
 import { apiUrl } from '@/lib/api';
 
 const initialVessels = [
-  { id: 'IMO9123456', imoNumber: 'IMO9123456', name: 'Albatross Explorer', vesselType: 'Container', buildYear: 2018, flagState: 'Panama', operator: 'Acme Shipmanagement', iceClass: '1A' },
-  { id: 'IMO9987654', imoNumber: 'IMO9987654', name: 'Nordic Supplier', vesselType: 'Bulker', buildYear: 2021, flagState: 'Norway', operator: 'Acme Shipmanagement', iceClass: '1C' },
-  { id: 'IMO9345678', imoNumber: 'IMO9345678', name: 'Pacific Horizon', vesselType: 'Tanker', buildYear: 2012, flagState: 'Liberia', operator: 'Acme Shipmanagement', iceClass: '-' },
-  { id: 'IMO9221133', imoNumber: 'IMO9221133', name: 'Atlantic Express', vesselType: 'Container', buildYear: 2015, flagState: 'Marshall Islands', operator: 'Acme Shipmanagement', iceClass: '-' },
-  { id: 'IMO9554411', imoNumber: 'IMO9554411', name: 'Global Voyager', vesselType: 'Ro-Ro', buildYear: 2020, flagState: 'Malta', operator: 'Acme Shipmanagement', iceClass: '1B' },
-  { id: 'IMO9876543', imoNumber: 'IMO9876543', name: 'Baltic Trader', vesselType: 'Container', buildYear: 2019, flagState: 'Denmark', operator: 'Acme Shipmanagement', iceClass: '1A Super' },
+  { id: 'IMO9434761', imoNumber: 'IMO9434761', name: 'MV Baltic Horizon', vesselType: 'Container', buildYear: 2017, flagState: 'Cyprus', operator: 'Acme Shipmanagement', iceClass: '1A' },
+  { id: 'IMO9762214', imoNumber: 'IMO9762214', name: 'MV Adriatic Pioneer', vesselType: 'Ro-Ro', buildYear: 2020, flagState: 'Italy', operator: 'Acme Shipmanagement', iceClass: '1B' },
+  { id: 'IMO9385420', imoNumber: 'IMO9385420', name: 'MT North Sea Progress', vesselType: 'Tanker', buildYear: 2014, flagState: 'Malta', operator: 'Acme Shipmanagement', iceClass: '-' },
+  { id: 'IMO9521678', imoNumber: 'IMO9521678', name: 'MV Iberian Link', vesselType: 'Container', buildYear: 2019, flagState: 'Portugal', operator: 'Acme Shipmanagement', iceClass: '1C' },
+  { id: 'IMO9677743', imoNumber: 'IMO9677743', name: 'MV Celtic Trader', vesselType: 'Bulker', buildYear: 2016, flagState: 'Ireland', operator: 'Acme Shipmanagement', iceClass: '-' },
+  { id: 'IMO9318042', imoNumber: 'IMO9318042', name: 'MV Aegean Relay', vesselType: 'Container', buildYear: 2013, flagState: 'Greece', operator: 'Acme Shipmanagement', iceClass: '1A Super' },
 ];
 
 export default function FleetRegistry() {
@@ -87,7 +87,7 @@ export default function FleetRegistry() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-slate-900">Fleet Registry</h2>
-          <p className="text-slate-500 mt-1">Master data module tracking static vessel characteristics required for FuelEU scope.</p>
+          <p className="text-slate-500 mt-1">Master data module tracking vessels with mixed EU exposure assumptions for FuelEU scope simulations.</p>
         </div>
         <div className="flex gap-3">
           <button onClick={handleFilter} className="flex items-center gap-2 bg-white border border-slate-300 text-slate-700 px-4 py-2 rounded-lg font-medium hover:bg-slate-50 shadow-sm transition-colors">
