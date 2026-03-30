@@ -66,6 +66,38 @@ paths:
         '200':
           description: OK
 
+  /api/v1/compliance-ledger/rows:
+    get:
+      summary: List compliance ledger rows for vessels
+      operationId: listComplianceLedgerRows
+      parameters:
+        - in: query
+          name: year
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 2025
+      responses:
+        '200':
+          description: OK
+
+  /api/v1/compliance-ledger/summary:
+    get:
+      summary: Retrieve compliance ledger summary KPIs
+      operationId: getComplianceLedgerSummary
+      parameters:
+        - in: query
+          name: year
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 2025
+      responses:
+        '200':
+          description: OK
+
   /api/v1/imports/upload:
     post:
       summary: Upload and process a FuelEU XLSX or XML file

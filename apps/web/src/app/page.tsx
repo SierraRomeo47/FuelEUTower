@@ -53,24 +53,32 @@ export default function Dashboard() {
     setMounted(true);
     const fetchDashboardData = async () => {
       try {
-        const [vesselsRes, kpisRes, docRes] = await Promise.all([
-          fetch(apiUrl('/api/v1/dashboard/vessels')).catch(() => null),
-          fetch(apiUrl('/api/v1/dashboard/kpis')).catch(() => null),
+        const [ledgerRowsRes, ledgerSummaryRes, docRes] = await Promise.all([
+          fetch(apiUrl('/api/v1/compliance-ledger/rows?year=2025')).catch(() => null),
+          fetch(apiUrl('/api/v1/compliance-ledger/summary?year=2025')).catch(() => null),
           fetch(apiUrl('/api/v1/doc-tracker/statuses?year=2025')).catch(() => null)
         ]);
         
-        if (vesselsRes && vesselsRes.ok) {
-          const vData = await vesselsRes.json();
-          if (vData && vData.length > 0) setVesselList(vData);
+        if (ledgerRowsRes && ledgerRowsRes.ok) {
+          const rows = await ledgerRowsRes.json();
+          if (Array.isArray(rows) && rows.length > 0) {
+            setVesselList(rows.map((row: any) => ({
+              id: row.imo ?? row.vesselId,
+              name: row.name,
+              type: row.vesselType,
+              icb: Number(row.icb ?? 0),
+              status: Number(row.icb ?? 0) < 0 ? 'Deficit' : 'Compliant'
+            })));
+          }
         }
         
-        if (kpisRes && kpisRes.ok) {
-          const kData = await kpisRes.json();
+        if (ledgerSummaryRes && ledgerSummaryRes.ok) {
+          const kData = await ledgerSummaryRes.json();
           setKpiData({
-            totalIcb: kData.totalIcb ?? -5849.70,
-            totalAcb: kData.totalAcb ?? 1760.70,
+            totalIcb: kData.totalIcb ?? -4535.00,
+            totalAcb: kData.totalAcb ?? 1601.00,
             penaltyExposure: kData.penaltyExposure ?? 142500,
-            totalBorrowingCap: kData.totalBorrowingCap ?? 18400.00
+            totalBorrowingCap: kData.totalBorrowingCap ?? 17120.00
           });
         }
 
