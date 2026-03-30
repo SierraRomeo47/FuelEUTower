@@ -1,16 +1,111 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Download, MoreHorizontal, Activity } from 'lucide-react';
 import { toast } from 'sonner';
+import { apiUrl } from '@/lib/api';
 
-const ledgerData = [
-  { imo: '9434761', name: 'MV Baltic Horizon', energy: '41,820.00', intensity: '90.2', target: '89.34', icb: -3180.40, vcb: null, banked: 0, borrowed: 800.00 },
-  { imo: '9762214', name: 'MV Adriatic Pioneer', energy: '18,460.00', intensity: '88.4', target: '89.34', icb: +980.20, vcb: +980.20, banked: 0, borrowed: 0 },
-  { imo: '9385420', name: 'MT North Sea Progress', energy: '52,300.00', intensity: '89.9', target: '89.34', icb: -1240.00, vcb: null, banked: 0, borrowed: 0 },
-];
+const targetIntensity = 89.34;
+const euFlags = new Set([
+  'CYPRUS', 'MALTA', 'GREECE', 'ITALY', 'PORTUGAL', 'SPAIN', 'FRANCE', 'GERMANY',
+  'NETHERLANDS', 'BELGIUM', 'DENMARK', 'SWEDEN', 'FINLAND', 'ESTONIA', 'LATVIA',
+  'LITHUANIA', 'POLAND', 'IRELAND', 'CROATIA', 'SLOVENIA', 'ROMANIA', 'BULGARIA'
+]);
+
+type RegistryVessel = {
+  imoNumber?: string;
+  name?: string;
+  vesselType?: string;
+  buildYear?: number;
+  flagState?: string;
+};
+
+type LedgerRow = {
+  imo: string;
+  name: string;
+  energy: string;
+  intensity: string;
+  target: string;
+  icb: number;
+  vcb: number | null;
+  banked: number;
+  borrowed: number;
+};
+
+function computeExposureRow(v: RegistryVessel): LedgerRow {
+  const vesselType = (v.vesselType ?? 'Container').toLowerCase();
+  const buildYear = v.buildYear ?? 2018;
+  const flag = (v.flagState ?? '').toUpperCase();
+  const isEuFlag = euFlags.has(flag);
+
+  const baseEnergyByType: Record<string, number> = {
+    container: 42000,
+    tanker: 52000,
+    bulker: 36000,
+    'ro-ro': 28000,
+    roro: 28000,
+    lng: 30000,
+    passenger: 24000
+  };
+  const vesselBase = baseEnergyByType[vesselType] ?? 34000;
+  const euExposureFactor = isEuFlag ? 0.78 : 0.52;
+  const ageYears = Math.max(0, 2025 - buildYear);
+  const ageFactor = 1 + Math.min(ageYears, 25) * 0.01;
+  const energy = vesselBase * euExposureFactor * ageFactor;
+
+  const typeDeltaByIntensity: Record<string, number> = {
+    container: 0.55,
+    tanker: 0.70,
+    bulker: 0.35,
+    'ro-ro': 0.10,
+    roro: 0.10,
+    lng: -0.45,
+    passenger: 0.25
+  };
+  const ageDelta = Math.min(ageYears, 25) * 0.03;
+  const exposureDelta = isEuFlag ? 0.18 : 0.35;
+  const intensity = targetIntensity + (typeDeltaByIntensity[vesselType] ?? 0.30) + ageDelta - exposureDelta;
+
+  // Simplified synthetic ledger projection: scaled to plausible MJ magnitudes.
+  const icb = (targetIntensity - intensity) * energy * 0.11;
+  const vcb = icb > 0 ? icb * 0.92 : null;
+  const borrowed = icb < -1200 ? Math.min(Math.abs(icb) * 0.18, 800) : 0;
+
+  return {
+    imo: (v.imoNumber ?? 'N/A').replace('IMO', ''),
+    name: v.name ?? 'Unnamed Vessel',
+    energy: energy.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    intensity: intensity.toFixed(1),
+    target: targetIntensity.toFixed(2),
+    icb,
+    vcb,
+    banked: 0,
+    borrowed
+  };
+}
 
 export default function ComplianceLedger() {
+  const [ledgerData, setLedgerData] = useState<LedgerRow[]>([]);
+
+  useEffect(() => {
+    fetch(apiUrl('/api/v1/registry/vessels'))
+      .then(r => r.json())
+      .then((vessels: RegistryVessel[]) => {
+        if (!Array.isArray(vessels) || vessels.length === 0) return;
+        setLedgerData(vessels.map(computeExposureRow));
+      })
+      .catch(() => {
+        toast.warning('Ledger Using Local Fallback', {
+          description: 'Registry API unavailable, using static sample exposure rows.'
+        });
+        setLedgerData([
+          computeExposureRow({ imoNumber: 'IMO9434761', name: 'MV Baltic Horizon', vesselType: 'Container', buildYear: 2017, flagState: 'Cyprus' }),
+          computeExposureRow({ imoNumber: 'IMO9762214', name: 'MV Adriatic Pioneer', vesselType: 'Ro-Ro', buildYear: 2020, flagState: 'Italy' }),
+          computeExposureRow({ imoNumber: 'IMO9385420', name: 'MT North Sea Progress', vesselType: 'Tanker', buildYear: 2014, flagState: 'Malta' }),
+        ]);
+      });
+  }, []);
+
   const handleExport = () => {
     toast('Generating CSV Ledger Export...', { description: 'Re-compiling total calculations.' });
     setTimeout(() => {
