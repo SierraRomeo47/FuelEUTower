@@ -12,4 +12,4 @@ globs: "**/*"
 5. **Verification Before Push:** Run applicable checks before pushing:
    - Backend: `apps/api/gradlew.bat -p apps/api test`
    - Frontend: `npm run build` in `apps/web`
-6. **Track Version Notes:** For major changes affecting behavior, update `CAPSTONE_PROGRESS.md` version history in the same commit.
+6. **Track Version Notes:** For major changes affecting behavior, update the **Version ladder (progress only)** section in `FuelEUTower.md` in the same commit.

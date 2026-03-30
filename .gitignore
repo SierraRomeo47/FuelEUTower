@@ -29,13 +29,14 @@ yarn-error.log*
 __pycache__/
 *.pyc
 
+# Local IDE / agent worktrees (not part of product source)
+.claude/
+
 # Local tooling/runtime
 .local/
 .cursor/*
 !.cursor/rules/
 !.cursor/rules/*.mdc
 
-# Optional large binary study exports
-Study Material/*.zip
-Study Material/*.pdf
-Study Material/*.xlsx
+# Legacy/local study folder (not part of repo layout; delete locally if still present after closing Excel)
+Study Material/

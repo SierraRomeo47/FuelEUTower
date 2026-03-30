@@ -1,0 +1,25 @@
+---
+description: FuelEU domain glossary and non-negotiable engineering constraints
+globs: "**/*"
+---
+
+# FuelEU domain and engineering constraints
+
+## Domain glossary
+- **ICB (Initial Compliance Balance):** Pre-flexibility calculation of zero-emissions trajectory distance.
+- **ACB (Adjusted Compliance Balance):** The ICB adjusted with prior-year surplus carry-forwards, multiplied by compliance bounds.
+- **VCB (Verified Compliance Balance):** Locked, regulator-approved final value representing the ship’s regulatory compliance state.
+- **GHG limit:** Legally defined greenhouse gas target trajectory per year.
+- **DoC (Document of Compliance):** Permit required for ongoing maritime operations in EU ports (workflow surface in-app).
+
+## Engineering constraints
+1. **No UI-side binding math:** Compliance calculations that affect regulatory state run on the backend; results are returned in API payloads. Do not implement authoritative compliance math in Next.js `onChange` or similar UI handlers.
+2. **Audit before comfort:** Mutations on Banking, Borrowing, or Pooling must insert a correlated `AuditEvent` (and follow module patterns in `AGENTS.md`).
+3. **Rule versioning:** Do not hardcode borrowing multipliers (e.g. 1.1×) globally without binding them to the active `RegulatoryParameter` (or equivalent) for the `ReportingPeriod`.
+
+## Stack (reference)
+- Frontend: TypeScript, Next.js (App Router), Tailwind, shadcn/ui patterns.
+- Backend: Java 21, Spring Boot (see `apps/api/build.gradle`), Spring Modulith-style boundaries where applicable.
+- Database: PostgreSQL, Flyway migrations as source of schema truth.
+
+Full project narrative: `FuelEUTower.md`.

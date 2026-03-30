@@ -1,5 +1,7 @@
 # Orchestration Rules for AI Coding Agents (Claude, Cursor, Antigravity)
 
+**Domain glossary and non-negotiable constraints (ICB/ACB/VCB, no UI-side binding math, audit events, rule versioning):** `.cursor/rules/fueleu-domain.mdc` and narrative context in `FuelEUTower.md`.
+
 1. **Stepwise Execution:** Run Phase operations sequentially. NEVER jump from Phase 1 straight to Phase 3. Complete and verify scaffolding before logic implementations.
 2. **API Contract Enforcement:** 
     - The repository uses `packages/openapi/api-spec.yaml` as the absolute source of truth. 
