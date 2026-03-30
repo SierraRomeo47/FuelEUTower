@@ -75,6 +75,40 @@ paths:
       responses:
         '200':
           description: OK
+
+  /api/v1/doc-tracker/statuses:
+    get:
+      summary: List vessel DoC pipeline statuses for a reporting year
+      operationId: listDocStatuses
+      parameters:
+        - in: query
+          name: year
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 2025
+      responses:
+        '200':
+          description: OK
+
+  /api/v1/doc-tracker/statuses/update:
+    post:
+      summary: Update vessel DoC pipeline status
+      operationId: updateDocStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocStatusUpdateRequest'
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+        '409':
+          description: Conflict
 components:
   schemas:
     VesselDTO:
@@ -111,3 +145,23 @@ components:
           format: uuid
         amount:
           type: number
+
+    DocStatusUpdateRequest:
+      type: object
+      required: [vesselId, docStatus]
+      properties:
+        vesselId:
+          type: string
+          format: uuid
+        docStatus:
+          type: string
+          enum:
+            - MISSING_FLEXIBILITY
+            - PENDING_AUDITOR
+            - IN_REVIEW
+            - VERIFICATION_COMPLETE
+            - DOC_ISSUED_FINAL
+        year:
+          type: integer
+          format: int32
+          default: 2025

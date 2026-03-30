@@ -5,63 +5,82 @@ import { ShieldCheck } from 'lucide-react';
 import { apiUrl } from '@/lib/api';
 import { toast } from 'sonner';
 
-type RegistryVessel = {
-  id: string;
-  imoNumber?: string;
-  name?: string;
-  vesselType?: string;
-  buildYear?: number;
-  flagState?: string;
-};
-
 type DocRow = {
+  vesselId: string;
   imo: string;
   name: string;
+  docStatus: string;
+  year: number;
   status: string;
   step: number;
+  canAdvance: boolean;
+  nextStatus?: string;
 };
-
-function computeDocStatus(v: RegistryVessel): DocRow {
-  const vesselType = (v.vesselType ?? 'Container').toLowerCase();
-  const buildYear = v.buildYear ?? 2018;
-  const age = Math.max(0, 2025 - buildYear);
-
-  // Deterministic rule-of-thumb progression for MVP demo.
-  let step = 1;
-  if (vesselType === 'lng' || vesselType === 'ro-ro' || age <= 8) step = 2;
-  if (vesselType === 'container' && age <= 6) step = 3;
-  if ((v.flagState ?? '').toUpperCase() === 'MALTA' && age <= 10) step = 4;
-
-  const statusByStep = ['Missing Flexibility', 'Pending Auditor', 'In Review', 'Verification Complete', 'DoC Issued (Final)'];
-  return {
-    imo: (v.imoNumber ?? 'N/A').replace('IMO', ''),
-    name: v.name ?? 'Unnamed Vessel',
-    status: statusByStep[step],
-    step
-  };
-}
 
 export default function DocTracker() {
   const [docStatus, setDocStatus] = useState<DocRow[]>([]);
+  const [updatingVesselId, setUpdatingVesselId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetch(apiUrl('/api/v1/registry/vessels'))
+  const fetchStatuses = () => {
+    fetch(apiUrl('/api/v1/doc-tracker/statuses?year=2025'))
       .then(r => r.json())
-      .then((vessels: RegistryVessel[]) => {
-        if (!Array.isArray(vessels) || vessels.length === 0) return;
-        setDocStatus(vessels.map(computeDocStatus));
+      .then((rows: any[]) => {
+        if (!Array.isArray(rows)) return;
+        setDocStatus(rows.map((row) => ({
+          vesselId: row.vesselId,
+          imo: (row.imo ?? 'N/A').toString().replace('IMO', ''),
+          name: row.name ?? 'Unnamed Vessel',
+          docStatus: row.docStatus ?? 'MISSING_FLEXIBILITY',
+          year: row.year ?? 2025,
+          status: row.statusLabel ?? 'Missing Flexibility',
+          step: row.step ?? 0,
+          canAdvance: !!row.canAdvance,
+          nextStatus: row.nextStatus
+        })));
       })
       .catch(() => {
-        toast.warning('Doc Tracker Using Local Fallback', {
-          description: 'Registry API unavailable, showing fallback DoC progression.'
+        toast.error('Doc Tracker Sync Failed', {
+          description: 'Could not load backend DoC statuses.'
         });
-        setDocStatus([
-          computeDocStatus({ id: '1', imoNumber: 'IMO9434761', name: 'MV Baltic Horizon', vesselType: 'Container', buildYear: 2017, flagState: 'Cyprus' }),
-          computeDocStatus({ id: '2', imoNumber: 'IMO9762214', name: 'MV Adriatic Pioneer', vesselType: 'Ro-Ro', buildYear: 2020, flagState: 'Italy' }),
-          computeDocStatus({ id: '3', imoNumber: 'IMO9385420', name: 'MT North Sea Progress', vesselType: 'Tanker', buildYear: 2014, flagState: 'Malta' }),
-        ]);
       });
+  };
+
+  useEffect(() => {
+    fetchStatuses();
   }, []);
+
+  const handleAdvance = async (row: DocRow) => {
+    if (!row.canAdvance || !row.nextStatus) return;
+    setUpdatingVesselId(row.vesselId);
+    try {
+      const res = await fetch(apiUrl('/api/v1/doc-tracker/statuses/update'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vesselId: row.vesselId,
+          docStatus: row.nextStatus,
+          year: row.year
+        })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        toast.error('DoC Update Blocked', {
+          description: err?.message ?? `HTTP ${res.status}`
+        });
+        return;
+      }
+      toast.success('DoC Status Updated', {
+        description: `${row.name} advanced to next compliance stage.`
+      });
+      fetchStatuses();
+    } catch {
+      toast.error('DoC Update Failed', {
+        description: 'Backend unreachable while updating DoC status.'
+      });
+    } finally {
+      setUpdatingVesselId(null);
+    }
+  };
 
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto animate-in fade-in duration-500">
@@ -101,6 +120,17 @@ export default function DocTracker() {
                 <span className={v.step >= 3 ? 'text-indigo-600' : ''}>Verify</span>
                 <span className={v.step >= 4 ? 'text-emerald-600' : ''}>Issued</span>
               </div>
+              <button
+                disabled={!v.canAdvance || updatingVesselId === v.vesselId}
+                onClick={() => handleAdvance(v)}
+                className={`mt-4 w-full rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
+                  v.canAdvance
+                    ? 'bg-slate-900 text-white hover:bg-slate-800'
+                    : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                }`}
+              >
+                {updatingVesselId === v.vesselId ? 'Updating...' : v.canAdvance ? 'Advance Stage' : 'DoC Finalized'}
+              </button>
             </div>
           </div>
         ))}
