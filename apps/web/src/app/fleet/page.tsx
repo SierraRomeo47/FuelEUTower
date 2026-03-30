@@ -16,7 +16,9 @@ const initialVessels = [
 
 export default function FleetRegistry() {
   const [vessels, setVessels] = useState<any[]>(initialVessels);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingVesselId, setEditingVesselId] = useState<string | null>(null);
 
   // New Vessel State
   const [newImo, setNewImo] = useState('');
@@ -25,6 +27,14 @@ export default function FleetRegistry() {
   const [newIceClass, setNewIceClass] = useState('-');
   const [newYear, setNewYear] = useState('');
   const [newFlag, setNewFlag] = useState('');
+
+  // Edit Vessel State
+  const [editImo, setEditImo] = useState('');
+  const [editName, setEditName] = useState('');
+  const [editType, setEditType] = useState('Container');
+  const [editIceClass, setEditIceClass] = useState('-');
+  const [editYear, setEditYear] = useState('');
+  const [editFlag, setEditFlag] = useState('');
 
   useEffect(() => {
     fetch(apiUrl('/api/v1/registry/vessels'))
@@ -77,8 +87,66 @@ export default function FleetRegistry() {
       setVessels([{ id: newImo, operator: 'Acme Shipmanagement', ...payload }, ...vessels]);
     }
     
-    setIsModalOpen(false);
+    setIsRegisterModalOpen(false);
     setNewImo(''); setNewName(''); setNewType('Container'); setNewIceClass('-'); setNewYear(''); setNewFlag('');
+  };
+
+  const openEditModal = (v: any) => {
+    setEditingVesselId(v.id);
+    setEditImo(v.imoNumber ?? '');
+    setEditName(v.name ?? '');
+    setEditType(v.vesselType ?? 'Container');
+    setEditIceClass(v.iceClass ?? '-');
+    setEditYear(v.buildYear ? String(v.buildYear) : '');
+    setEditFlag(v.flagState ?? '');
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingVesselId) return;
+    const payload = {
+      imoNumber: editImo,
+      name: editName,
+      vesselType: editType,
+      iceClass: editIceClass,
+      buildYear: parseInt(editYear) || null,
+      flagState: editFlag
+    };
+
+    try {
+      const res = await fetch(apiUrl(`/api/v1/registry/vessels/${editingVesselId}`), {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setVessels(vessels.map(v => (v.id === editingVesselId ? updated : v)));
+        toast.success('Vessel Updated', { description: `${updated.name} (${updated.imoNumber}) updated successfully.` });
+      } else {
+        const errorPayload = await res.json().catch(() => null);
+        const existing = errorPayload && errorPayload.imoNumber ? errorPayload : null;
+        if (res.status === 409 && existing && existing.id !== editingVesselId) {
+          toast.error('Duplicate IMO Number', {
+            description: `${existing.name} (${existing.imoNumber}) already exists in the registry.`
+          });
+        } else if (res.status === 404) {
+          toast.error('Vessel Not Found', { description: 'The selected vessel no longer exists.' });
+        } else {
+          toast.error('Update Failed', {
+            description: errorPayload?.message ?? `API request rejected with HTTP ${res.status}.`
+          });
+        }
+        return;
+      }
+    } catch {
+      toast.error('Update Failed', { description: 'Backend unreachable while updating vessel.' });
+      return;
+    }
+
+    setIsEditModalOpen(false);
+    setEditingVesselId(null);
   };
 
   return (
@@ -94,7 +162,7 @@ export default function FleetRegistry() {
             <Filter className="w-4 h-4" /> Filter
           </button>
           <button 
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setIsRegisterModalOpen(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium transition-colors shadow-sm"
           >
             + Register Vessel
@@ -141,7 +209,7 @@ export default function FleetRegistry() {
                   <td className="px-6 py-4 text-slate-600">{v.buildYear || v.year}</td>
                   <td className="px-6 py-4 text-slate-600">{v.iceClass}</td>
                   <td className="px-6 py-4 text-slate-300 group-hover:text-blue-600 text-right">
-                    <button onClick={() => toast("Vessel quick-actions opened.")}>
+                    <button onClick={() => openEditModal(v)} title="Edit Vessel">
                       <MoreHorizontal className="w-5 h-5 ml-auto" />
                     </button>
                   </td>
@@ -153,12 +221,12 @@ export default function FleetRegistry() {
       </div>
 
       {/* Registration Modal Overlay */}
-      {isModalOpen && (
+      {isRegisterModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center p-6 border-b border-slate-100">
               <h3 className="text-xl font-bold text-slate-900">Register New Vessel</h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+              <button onClick={() => setIsRegisterModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -203,6 +271,64 @@ export default function FleetRegistry() {
               </div>
               <button type="submit" className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors">
                 Register to Fleet
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal Overlay */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-6 border-b border-slate-100">
+              <h3 className="text-xl font-bold text-slate-900">Edit Vessel</h3>
+              <button onClick={() => setIsEditModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleEditSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">IMO Number</label>
+                <input required value={editImo} onChange={(e) => setEditImo(e.target.value)} type="text" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-blue-500 focus:outline-none focus:ring-2" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Vessel Name</label>
+                <input required value={editName} onChange={(e) => setEditName(e.target.value)} type="text" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-blue-500 focus:outline-none focus:ring-2" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Ship Type</label>
+                <select required value={editType} onChange={(e) => setEditType(e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-blue-500 focus:outline-none focus:ring-2">
+                  <option value="Container">Container</option>
+                  <option value="Bulker">Bulker</option>
+                  <option value="Tanker">Tanker</option>
+                  <option value="Ro-Ro">Ro-Ro</option>
+                  <option value="Passenger">Passenger</option>
+                  <option value="LNG">LNG</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700">Year Built</label>
+                  <input required value={editYear} onChange={(e) => setEditYear(e.target.value)} type="number" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-blue-500 focus:outline-none focus:ring-2" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700">Ice Class</label>
+                  <select required value={editIceClass} onChange={(e) => setEditIceClass(e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-blue-500 focus:outline-none focus:ring-2">
+                    <option value="-">None (-)</option>
+                    <option value="1A Super">1A Super</option>
+                    <option value="1A">1A</option>
+                    <option value="1B">1B</option>
+                    <option value="1C">1C</option>
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                 <label className="text-sm font-semibold text-slate-700">Flag State Registration</label>
+                 <input required value={editFlag} onChange={(e) => setEditFlag(e.target.value)} type="text" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-blue-500 focus:outline-none focus:ring-2" />
+              </div>
+              <button type="submit" className="w-full mt-4 bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-lg transition-colors">
+                Save Vessel Changes
               </button>
             </form>
           </div>

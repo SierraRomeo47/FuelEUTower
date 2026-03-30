@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/registry")
@@ -35,5 +36,26 @@ public class RegistryController {
                     .map(existing -> ResponseEntity.status(HttpStatus.CONFLICT).body(existing))
                     .orElseGet(() -> ResponseEntity.status(HttpStatus.CONFLICT).build());
         }
+    }
+
+    @PutMapping("/vessels/{vesselId}")
+    public ResponseEntity<Vessel> updateVessel(@PathVariable UUID vesselId, @RequestBody Vessel update) {
+        return vesselRepository.findById(vesselId)
+                .map(existing -> {
+                    existing.setImoNumber(update.getImoNumber());
+                    existing.setName(update.getName());
+                    existing.setVesselType(update.getVesselType());
+                    existing.setIceClass(update.getIceClass());
+                    existing.setBuildYear(update.getBuildYear());
+                    existing.setFlagState(update.getFlagState());
+                    try {
+                        return ResponseEntity.ok(vesselRepository.save(existing));
+                    } catch (DataIntegrityViolationException ex) {
+                        return vesselRepository.findByImoNumber(update.getImoNumber())
+                                .map(duplicate -> ResponseEntity.status(HttpStatus.CONFLICT).body(duplicate))
+                                .orElseGet(() -> ResponseEntity.status(HttpStatus.CONFLICT).build());
+                    }
+                })
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
 }

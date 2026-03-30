@@ -14,6 +14,29 @@ paths:
       responses:
         '200':
           description: OK
+
+  /api/v1/registry/vessels/{vesselId}:
+    put:
+      summary: Update an existing vessel
+      operationId: updateRegistryVessel
+      parameters:
+        - in: path
+          name: vesselId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VesselDTO'
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Not Found
     post:
       summary: Register a new vessel
       operationId: registerVessel
