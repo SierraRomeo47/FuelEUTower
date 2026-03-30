@@ -4,10 +4,18 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:clean": "node ./scripts/clear-dev-session.mjs --no-kill && next dev",
+    "dev:fresh": "node ./scripts/clear-dev-session.mjs && next dev",
     "build": "next build",
+    "verify:css": "node ./scripts/verify-next-css.mjs",
+    "smoke:styles": "node ./scripts/smoke-next-styles.mjs",
+    "smoke:routes": "node ./scripts/smoke-routes.mjs",
+    "test:styles": "npm run build && npm run verify:css && npm run smoke:styles",
+    "test:app": "npm run build && npm run verify:css && npm run smoke:styles && npm run smoke:routes",
     "start": "next start",
     "lint": "next lint",
-    "start:clean": "powershell -NoProfile -Command \"$conn = netstat -ano | Select-String ':3000' | Select-Object -First 1; if ($conn) { $pidToStop = (($conn -split '\\s+')[-1]); Stop-Process -Id $pidToStop -Force -ErrorAction SilentlyContinue }; if (Test-Path .next) { Remove-Item .next -Recurse -Force }; npm run build; npm run start\""
+    "ci": "npm run lint && npm run build && npm run verify:css && npm run smoke:styles && npm run smoke:routes",
+    "start:clean": "node ./scripts/clear-dev-session.mjs && npm run build && npm run start"
   },
   "dependencies": {
     "clsx": "^2.1.1",
@@ -26,6 +34,7 @@
     "autoprefixer": "^10.4.19",
     "eslint": "^8",
     "eslint-config-next": "14.2.3",
+    "kill-port": "^2.0.1",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"

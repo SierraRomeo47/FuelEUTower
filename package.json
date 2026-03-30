@@ -1,0 +1,17 @@
+{
+  "name": "fueleu-platform",
+  "private": true,
+  "description": "Delegates npm scripts to the Next.js app in apps/web — run npm install there first (or from repo root after adding deps only under apps/web).",
+  "scripts": {
+    "dev": "npm run dev --prefix apps/web",
+    "dev:clean": "npm run dev:clean --prefix apps/web",
+    "dev:fresh": "npm run dev:fresh --prefix apps/web",
+    "build": "npm run build --prefix apps/web",
+    "start": "npm run start --prefix apps/web",
+    "start:clean": "npm run start:clean --prefix apps/web",
+    "ci": "npm run ci --prefix apps/web",
+    "lint": "npm run lint --prefix apps/web",
+    "test:styles": "npm run test:styles --prefix apps/web",
+    "test:app": "npm run test:app --prefix apps/web"
+  }
+}
