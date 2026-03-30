@@ -25,9 +25,22 @@ const initialVessels = [
   { id: 'IMO9677743', name: 'MV Celtic Trader', type: 'Bulker', icb: -1715.60, status: 'Deficit' },
 ];
 
+type DocStatusRow = {
+  imo: string;
+  statusLabel: string;
+  step: number;
+};
+
 export default function Dashboard() {
   const [mounted, setMounted] = useState(false);
   const [vesselList, setVesselList] = useState<any[]>(initialVessels);
+  const [docStatusByImo, setDocStatusByImo] = useState<Record<string, DocStatusRow>>({});
+  const [docCounts, setDocCounts] = useState({
+    pending: 0,
+    inReview: 0,
+    verificationComplete: 0,
+    issued: 0
+  });
   const [kpiData, setKpiData] = useState({
     totalIcb: -4535.00,
     totalAcb: 1601.00,
@@ -40,9 +53,10 @@ export default function Dashboard() {
     setMounted(true);
     const fetchDashboardData = async () => {
       try {
-        const [vesselsRes, kpisRes] = await Promise.all([
+        const [vesselsRes, kpisRes, docRes] = await Promise.all([
           fetch(apiUrl('/api/v1/dashboard/vessels')).catch(() => null),
-          fetch(apiUrl('/api/v1/dashboard/kpis')).catch(() => null)
+          fetch(apiUrl('/api/v1/dashboard/kpis')).catch(() => null),
+          fetch(apiUrl('/api/v1/doc-tracker/statuses?year=2025')).catch(() => null)
         ]);
         
         if (vesselsRes && vesselsRes.ok) {
@@ -58,6 +72,31 @@ export default function Dashboard() {
             penaltyExposure: kData.penaltyExposure ?? 142500,
             totalBorrowingCap: kData.totalBorrowingCap ?? 18400.00
           });
+        }
+
+        if (docRes && docRes.ok) {
+          const docRows = await docRes.json();
+          if (Array.isArray(docRows)) {
+            const map: Record<string, DocStatusRow> = {};
+            const counts = { pending: 0, inReview: 0, verificationComplete: 0, issued: 0 };
+            docRows.forEach((row: any) => {
+              const key = (row.imo ?? '').toString().toUpperCase();
+              if (key) {
+                map[key] = {
+                  imo: key,
+                  statusLabel: row.statusLabel ?? 'Missing Flexibility',
+                  step: row.step ?? 0
+                };
+              }
+              const status = (row.docStatus ?? '').toString().toUpperCase();
+              if (status === 'PENDING_AUDITOR') counts.pending += 1;
+              if (status === 'IN_REVIEW') counts.inReview += 1;
+              if (status === 'VERIFICATION_COMPLETE') counts.verificationComplete += 1;
+              if (status === 'DOC_ISSUED_FINAL') counts.issued += 1;
+            });
+            setDocStatusByImo(map);
+            setDocCounts(counts);
+          }
         }
       } catch (err) {
         console.error("API Integration Error:", err);
@@ -105,6 +144,13 @@ export default function Dashboard() {
           subtext="2% statutory cap limit"
           trend="down"
         />
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <DocCountCard label="Pending Auditor" value={docCounts.pending} tone="amber" />
+        <DocCountCard label="In Review" value={docCounts.inReview} tone="blue" />
+        <DocCountCard label="Verification Complete" value={docCounts.verificationComplete} tone="indigo" />
+        <DocCountCard label="DoC Issued" value={docCounts.issued} tone="emerald" />
       </div>
 
       {/* Charts Row */}
@@ -175,6 +221,7 @@ export default function Dashboard() {
                 <th className="px-6 py-4">Ship Type</th>
                 <th className="px-6 py-4 text-right">ICB Extrapolation (MJ)</th>
                 <th className="px-6 py-4">Regulatory Status</th>
+                <th className="px-6 py-4">DoC Pipeline</th>
                 <th className="px-6 py-4"></th>
               </tr>
             </thead>
@@ -194,6 +241,23 @@ export default function Dashboard() {
                       {v.status}
                     </span>
                   </td>
+                  <td className="px-6 py-4">
+                    {(() => {
+                      const doc = docStatusByImo[(v.id ?? '').toString().toUpperCase()];
+                      const label = doc?.statusLabel ?? 'Missing Flexibility';
+                      const step = doc?.step ?? 0;
+                      const tone = step >= 4
+                        ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                        : step >= 2
+                          ? 'bg-blue-100 text-blue-700 border-blue-200'
+                          : 'bg-slate-100 text-slate-600 border-slate-200';
+                      return (
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${tone}`}>
+                          {label}
+                        </span>
+                      );
+                    })()}
+                  </td>
                   <td className="px-6 py-4 text-slate-300 group-hover:text-blue-600 text-right transition-colors">
                     <MoreHorizontal className="w-5 h-5 ml-auto" />
                   </td>
@@ -203,6 +267,24 @@ export default function Dashboard() {
           </table>
         </div>
       </div>
+    </div>
+  );
+}
+
+function DocCountCard({ label, value, tone }: { label: string; value: number; tone: 'amber' | 'blue' | 'indigo' | 'emerald' }) {
+  const toneClass =
+    tone === 'amber'
+      ? 'border-amber-200 bg-amber-50 text-amber-800'
+      : tone === 'blue'
+        ? 'border-blue-200 bg-blue-50 text-blue-800'
+        : tone === 'indigo'
+          ? 'border-indigo-200 bg-indigo-50 text-indigo-800'
+          : 'border-emerald-200 bg-emerald-50 text-emerald-800';
+
+  return (
+    <div className={`rounded-xl border p-4 ${toneClass}`}>
+      <div className="text-xs font-semibold uppercase tracking-wide">{label}</div>
+      <div className="text-2xl font-extrabold mt-1">{value}</div>
     </div>
   );
 }

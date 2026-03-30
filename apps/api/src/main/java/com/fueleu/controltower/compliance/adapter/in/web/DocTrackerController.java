@@ -44,7 +44,7 @@ public class DocTrackerController {
                 "ORDER BY v.name";
 
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
-            String status = rs.getString("doc_status");
+            String status = normalizeStatus(rs.getString("doc_status"));
             int step = toStep(status);
             Map<String, Object> row = new HashMap<>();
             row.put("vesselId", rs.getObject("vessel_id", UUID.class));
@@ -63,7 +63,7 @@ public class DocTrackerController {
     @PostMapping("/statuses/update")
     public ResponseEntity<Map<String, Object>> updateStatus(@RequestBody Map<String, Object> payload) {
         String vesselIdRaw = payload.get("vesselId") == null ? null : payload.get("vesselId").toString();
-        String statusRaw = payload.get("docStatus") == null ? null : payload.get("docStatus").toString().toUpperCase();
+        String statusRaw = payload.get("docStatus") == null ? null : normalizeStatus(payload.get("docStatus").toString().toUpperCase());
         int year = payload.get("year") == null ? 2025 : Integer.parseInt(payload.get("year").toString());
 
         if (vesselIdRaw == null || statusRaw == null) {
@@ -91,11 +91,12 @@ public class DocTrackerController {
 
         UUID periodId = ensureReportingPeriod(year);
         UUID vesselYearId = ensureVesselYear(vesselId, periodId);
-        String currentStatus = jdbcTemplate.queryForObject(
+        String currentStatusRaw = jdbcTemplate.queryForObject(
                 "SELECT COALESCE(doc_status, 'MISSING_FLEXIBILITY') FROM vessel_year WHERE id = ?",
                 String.class,
                 vesselYearId
         );
+        String currentStatus = normalizeStatus(currentStatusRaw);
 
         if (!isValidTransition(currentStatus, statusRaw)) {
             return conflict("Invalid DoC transition from " + currentStatus + " to " + statusRaw + ".");
@@ -174,6 +175,12 @@ public class DocTrackerController {
             case "DOC_ISSUED_FINAL" -> 4;
             default -> 0;
         };
+    }
+
+    private String normalizeStatus(String status) {
+        if (status == null || status.isBlank()) return "MISSING_FLEXIBILITY";
+        if ("PENDING".equalsIgnoreCase(status)) return "PENDING_AUDITOR";
+        return status.toUpperCase();
     }
 
     private String toLabel(String status) {
