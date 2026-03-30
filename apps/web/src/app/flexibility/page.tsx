@@ -10,6 +10,7 @@ export default function FlexibilityControls() {
   
   // Dynamic API State
   const [vessels, setVessels] = useState<{id: string, name: string, imoNumber: string}[]>([]);
+  const [ledgerByVesselId, setLedgerByVesselId] = useState<Record<string, { icb: number; targetIntensity: number; energyInScope: number }>>({});
   const [selectedVessel, setSelectedVessel] = useState('');
   const [amount, setAmount] = useState('1500');
 
@@ -24,6 +25,23 @@ export default function FlexibilityControls() {
         }
       })
       .catch(e => console.error("API Offline. Dropdown isolated."));
+
+    fetch(apiUrl('/api/v1/compliance-ledger/rows?year=2025'))
+      .then(res => res.json())
+      .then((rows) => {
+        if (!Array.isArray(rows)) return;
+        const map: Record<string, { icb: number; targetIntensity: number; energyInScope: number }> = {};
+        rows.forEach((row: any) => {
+          if (!row?.vesselId) return;
+          map[row.vesselId] = {
+            icb: Number(row.icb ?? 0),
+            targetIntensity: Number(row.targetIntensity ?? 89.34),
+            energyInScope: Number(row.energyInScope ?? 0)
+          };
+        });
+        setLedgerByVesselId(map);
+      })
+      .catch(() => console.error("Ledger API unavailable for flexibility hints."));
   }, []);
 
   const handleExecute = async (action: string) => {
@@ -35,6 +53,29 @@ export default function FlexibilityControls() {
     if (vessels.length > 0 && !selectedVessel) {
        toast.error("Invalid Configuration", { description: "Please explicitly bind a Vessel target to this transaction." });
        return;
+    }
+
+    const selectedLedger = ledgerByVesselId[selectedVessel];
+    const parsedAmount = Number(amount);
+    if (Number.isNaN(parsedAmount) || parsedAmount <= 0) {
+      toast.error("Invalid Amount", { description: "Enter a positive amount before committing." });
+      return;
+    }
+
+    if (selectedLedger) {
+      const borrowingCap = selectedLedger.targetIntensity * selectedLedger.energyInScope * 0.02;
+      if (action === 'bank' && selectedLedger.icb <= 0) {
+        toast.error("Banking Blocked", { description: "Selected vessel has no positive compliance balance to bank." });
+        return;
+      }
+      if (action === 'borrow' && selectedLedger.icb >= 0) {
+        toast.error("Borrowing Blocked", { description: "Selected vessel is not in deficit." });
+        return;
+      }
+      if (action === 'borrow' && parsedAmount > borrowingCap) {
+        toast.error("Borrowing Cap Exceeded", { description: `Amount exceeds vessel cap (${borrowingCap.toFixed(2)} MJ).` });
+        return;
+      }
     }
 
     try {
@@ -76,6 +117,9 @@ export default function FlexibilityControls() {
 
     setActiveModal(null);
   };
+
+  const selectedLedger = selectedVessel ? ledgerByVesselId[selectedVessel] : undefined;
+  const borrowingCapHint = selectedLedger ? selectedLedger.targetIntensity * selectedLedger.energyInScope * 0.02 : null;
 
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto animate-in fade-in duration-500">
@@ -183,6 +227,12 @@ export default function FlexibilityControls() {
                   <label className="text-sm font-semibold text-slate-700 block mb-2">Simulation Mechanism Total (MJ)</label>
                   <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="w-full px-4 py-3 text-lg font-mono bg-white border border-slate-300 rounded-lg text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 </div>
+                {selectedLedger && (
+                  <div className="text-xs bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-600 leading-relaxed">
+                    <div><b>Selected ICB:</b> {selectedLedger.icb.toFixed(2)} MJ</div>
+                    {borrowingCapHint !== null && <div><b>Borrowing Cap (2% rule):</b> {borrowingCapHint.toFixed(2)} MJ</div>}
+                  </div>
+                )}
               </div>
             </div>
 

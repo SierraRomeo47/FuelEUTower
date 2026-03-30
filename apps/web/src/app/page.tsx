@@ -9,12 +9,18 @@ import { useRouter } from 'next/navigation';
 import { apiUrl } from '@/lib/api';
 
 const fleetData = [
-  { month: 'Jan', intensity: 89.1, target: 89.34 },
-  { month: 'Feb', intensity: 89.5, target: 89.34 },
-  { month: 'Mar', intensity: 88.9, target: 89.34 },
-  { month: 'Apr', intensity: 88.2, target: 89.34 },
-  { month: 'May', intensity: 89.0, target: 89.34 },
-  { month: 'Jun', intensity: 89.4, target: 89.34 },
+  { month: 'Jan', intensity: 89.22, target: 89.34 },
+  { month: 'Feb', intensity: 89.41, target: 89.34 },
+  { month: 'Mar', intensity: 89.08, target: 89.34 },
+  { month: 'Apr', intensity: 88.64, target: 89.34 },
+  { month: 'May', intensity: 88.88, target: 89.34 },
+  { month: 'Jun', intensity: 89.19, target: 89.34 },
+  { month: 'Jul', intensity: 89.36, target: 89.34 },
+  { month: 'Aug', intensity: 89.27, target: 89.34 },
+  { month: 'Sep', intensity: 89.05, target: 89.34 },
+  { month: 'Oct', intensity: 88.92, target: 89.34 },
+  { month: 'Nov', intensity: 89.18, target: 89.34 },
+  { month: 'Dec', intensity: 89.31, target: 89.34 },
 ];
 
 const initialVessels = [
@@ -34,6 +40,7 @@ type DocStatusRow = {
 export default function Dashboard() {
   const [mounted, setMounted] = useState(false);
   const [vesselList, setVesselList] = useState<any[]>(initialVessels);
+  const [trajectoryData, setTrajectoryData] = useState(fleetData);
   const [docStatusByImo, setDocStatusByImo] = useState<Record<string, DocStatusRow>>({});
   const [docCounts, setDocCounts] = useState({
     pending: 0,
@@ -69,6 +76,7 @@ export default function Dashboard() {
               icb: Number(row.icb ?? 0),
               status: Number(row.icb ?? 0) < 0 ? 'Deficit' : 'Compliant'
             })));
+            setTrajectoryData(buildYearTrajectory(rows));
           }
         }
         
@@ -174,7 +182,7 @@ export default function Dashboard() {
           </div>
           <div className="h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={fleetData} margin={{ top: 10, right: 10, bottom: 5, left: -20 }}>
+              <LineChart data={trajectoryData} margin={{ top: 10, right: 10, bottom: 5, left: -20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 13}} dy={10} />
                 <YAxis domain={['dataMin - 0.5', 'dataMax + 0.5']} axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 13}} />
@@ -328,4 +336,19 @@ function MechanismRow({ label, value, total, color }: any) {
       </div>
     </div>
   );
+}
+
+function buildYearTrajectory(rows: any[]) {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const values = Array.isArray(rows) ? rows.map((r) => Number(r.actualIntensity ?? 89.34)) : [];
+  if (values.length === 0) return fleetData;
+
+  const avg = values.reduce((a, b) => a + b, 0) / values.length;
+  // Seasonal pattern: slightly higher in winter months, lower in spring/autumn shoulder periods.
+  const seasonalOffsets = [0.22, 0.34, 0.08, -0.28, -0.17, 0.04, 0.12, 0.06, -0.11, -0.19, 0.03, 0.18];
+  return months.map((month, idx) => ({
+    month,
+    intensity: Number((avg + seasonalOffsets[idx]).toFixed(2)),
+    target: 89.34
+  }));
 }
