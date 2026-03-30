@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Filter, Ship, MoreHorizontal, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiUrl } from '@/lib/api';
+import { asArray, fetchJson } from '@/lib/http';
 
 const initialVessels = [
   { id: 'IMO9434761', imoNumber: 'IMO9434761', name: 'MV Baltic Horizon', vesselType: 'Container', buildYear: 2017, flagState: 'Cyprus', operator: 'Acme Shipmanagement', iceClass: '1A' },
@@ -37,10 +38,12 @@ export default function FleetRegistry() {
   const [editFlag, setEditFlag] = useState('');
 
   useEffect(() => {
-    fetch(apiUrl('/api/v1/registry/vessels'))
-      .then(r => r.json())
-      .then(data => { if (data && data.length) setVessels(data); })
-      .catch(e => console.error("API Integration Offline. Serving mocked initial state."));
+    fetchJson('/api/v1/registry/vessels')
+      .then((payload) => {
+        const data = asArray(payload);
+        if (data.length) setVessels(data);
+      })
+      .catch(() => console.error("API Integration Offline. Serving mocked initial state."));
   }, []);
 
   const handleFilter = () => {

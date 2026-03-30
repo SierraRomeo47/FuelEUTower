@@ -6,21 +6,22 @@ import {
 } from 'recharts';
 import { AlertTriangle, ArrowUpRight, ArrowDownRight, MoreHorizontal } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { apiUrl } from '@/lib/api';
+import { asArray, fetchJson } from '@/lib/http';
+import { DNV_REQUIRED_GHG_INTENSITY_2025, UNITS } from '@/lib/units';
 
 const fleetData = [
-  { month: 'Jan', intensity: 89.22, target: 89.34 },
-  { month: 'Feb', intensity: 89.41, target: 89.34 },
-  { month: 'Mar', intensity: 89.08, target: 89.34 },
-  { month: 'Apr', intensity: 88.64, target: 89.34 },
-  { month: 'May', intensity: 88.88, target: 89.34 },
-  { month: 'Jun', intensity: 89.19, target: 89.34 },
-  { month: 'Jul', intensity: 89.36, target: 89.34 },
-  { month: 'Aug', intensity: 89.27, target: 89.34 },
-  { month: 'Sep', intensity: 89.05, target: 89.34 },
-  { month: 'Oct', intensity: 88.92, target: 89.34 },
-  { month: 'Nov', intensity: 89.18, target: 89.34 },
-  { month: 'Dec', intensity: 89.31, target: 89.34 },
+  { month: 'Jan', intensity: 89.22, target: DNV_REQUIRED_GHG_INTENSITY_2025 },
+  { month: 'Feb', intensity: 89.41, target: DNV_REQUIRED_GHG_INTENSITY_2025 },
+  { month: 'Mar', intensity: 89.08, target: DNV_REQUIRED_GHG_INTENSITY_2025 },
+  { month: 'Apr', intensity: 88.64, target: DNV_REQUIRED_GHG_INTENSITY_2025 },
+  { month: 'May', intensity: 88.88, target: DNV_REQUIRED_GHG_INTENSITY_2025 },
+  { month: 'Jun', intensity: 89.19, target: DNV_REQUIRED_GHG_INTENSITY_2025 },
+  { month: 'Jul', intensity: 89.36, target: DNV_REQUIRED_GHG_INTENSITY_2025 },
+  { month: 'Aug', intensity: 89.27, target: DNV_REQUIRED_GHG_INTENSITY_2025 },
+  { month: 'Sep', intensity: 89.05, target: DNV_REQUIRED_GHG_INTENSITY_2025 },
+  { month: 'Oct', intensity: 88.92, target: DNV_REQUIRED_GHG_INTENSITY_2025 },
+  { month: 'Nov', intensity: 89.18, target: DNV_REQUIRED_GHG_INTENSITY_2025 },
+  { month: 'Dec', intensity: 89.31, target: DNV_REQUIRED_GHG_INTENSITY_2025 },
 ];
 
 const initialVessels = [
@@ -54,6 +55,11 @@ export default function Dashboard() {
     penaltyExposure: 142500,
     totalBorrowingCap: 17120.00
   });
+  const [flexStats, setFlexStats] = useState({
+    bankedAmount: 0,
+    borrowedAmount: 0,
+    pooledTransfer: 0
+  });
   const router = useRouter();
 
   useEffect(() => {
@@ -61,14 +67,14 @@ export default function Dashboard() {
     const fetchDashboardData = async () => {
       try {
         const [ledgerRowsRes, ledgerSummaryRes, docRes] = await Promise.all([
-          fetch(apiUrl('/api/v1/compliance-ledger/rows?year=2025')).catch(() => null),
-          fetch(apiUrl('/api/v1/compliance-ledger/summary?year=2025')).catch(() => null),
-          fetch(apiUrl('/api/v1/doc-tracker/statuses?year=2025')).catch(() => null)
+          fetchJson('/api/v1/compliance-ledger/rows?year=2025').catch(() => null),
+          fetchJson('/api/v1/compliance-ledger/summary?year=2025').catch(() => null),
+          fetchJson('/api/v1/doc-tracker/statuses?year=2025').catch(() => null)
         ]);
         
-        if (ledgerRowsRes && ledgerRowsRes.ok) {
-          const rows = await ledgerRowsRes.json();
-          if (Array.isArray(rows) && rows.length > 0) {
+        if (ledgerRowsRes) {
+          const rows = asArray(ledgerRowsRes);
+          if (rows.length > 0) {
             setVesselList(rows.map((row: any) => ({
               id: row.imo ?? row.vesselId,
               name: row.name,
@@ -77,11 +83,19 @@ export default function Dashboard() {
               status: Number(row.icb ?? 0) < 0 ? 'Deficit' : 'Compliant'
             })));
             setTrajectoryData(buildYearTrajectory(rows));
+            const banked = rows.reduce((acc: number, row: any) => acc + Number(row.bankedAmount ?? 0), 0);
+            const borrowed = rows.reduce((acc: number, row: any) => acc + Number(row.borrowedAmount ?? 0), 0);
+            const pooled = rows.reduce((acc: number, row: any) => acc + Math.max(0, Number(row.icb ?? 0)), 0) * 0.1;
+            setFlexStats({
+              bankedAmount: Number(banked.toFixed(2)),
+              borrowedAmount: Number(borrowed.toFixed(2)),
+              pooledTransfer: Number(pooled.toFixed(2))
+            });
           }
         }
         
-        if (ledgerSummaryRes && ledgerSummaryRes.ok) {
-          const kData = await ledgerSummaryRes.json();
+        if (ledgerSummaryRes) {
+          const kData = ledgerSummaryRes;
           setKpiData({
             totalIcb: kData.totalIcb ?? -4535.00,
             totalAcb: kData.totalAcb ?? 1601.00,
@@ -90,9 +104,9 @@ export default function Dashboard() {
           });
         }
 
-        if (docRes && docRes.ok) {
-          const docRows = await docRes.json();
-          if (Array.isArray(docRows)) {
+        if (docRes) {
+          const docRows = asArray(docRes);
+          if (docRows.length > 0) {
             const map: Record<string, DocStatusRow> = {};
             const counts = { pending: 0, inReview: 0, verificationComplete: 0, issued: 0 };
             docRows.forEach((row: any) => {
@@ -136,27 +150,27 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPI 
           title="Initial Compliance Balance" 
-          value={`${kpiData.totalIcb > 0 ? '+' : ''}${kpiData.totalIcb.toLocaleString('en-US', {minimumFractionDigits: 2})} MJ`} 
+          value={`${kpiData.totalIcb > 0 ? '+' : ''}${kpiData.totalIcb.toLocaleString('en-US', {minimumFractionDigits: 2})} gCO2eq`} 
           subtext="Unverified raw trajectory"
           trend={kpiData.totalIcb > 0 ? "up" : "down"}
         />
         <KPI 
           title="Verified Balance (ACB)" 
-          value={`${kpiData.totalAcb > 0 ? '+' : ''}${kpiData.totalAcb.toLocaleString('en-US', {minimumFractionDigits: 2})} MJ`} 
+          value={`${kpiData.totalAcb > 0 ? '+' : ''}${kpiData.totalAcb.toLocaleString('en-US', {minimumFractionDigits: 2})} gCO2eq`} 
           subtext="Regulator locked surplus"
           trend={kpiData.totalAcb > 0 ? "up" : "down"}
           highlight
         />
         <KPI 
           title="Current Penalty Exposure" 
-          value={`€ ${kpiData.penaltyExposure.toLocaleString('en-US')}`} 
+          value={`EUR ${kpiData.penaltyExposure.toLocaleString('en-US')}`} 
           subtext="Estimated residual cost"
           trend="up"
           danger
         />
         <KPI 
           title="Fleet Borrowing Capacity" 
-          value={`${kpiData.totalBorrowingCap.toLocaleString('en-US', {minimumFractionDigits: 2})} MJ`} 
+          value={`${kpiData.totalBorrowingCap.toLocaleString('en-US', {minimumFractionDigits: 2})} gCO2eq`} 
           subtext="2% statutory cap limit"
           trend="down"
         />
@@ -177,7 +191,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-center mb-6">
             <div>
               <h3 className="text-lg font-semibold text-slate-900">GHG Intensity Trajectory</h3>
-              <p className="text-sm text-slate-500">Fleet average vs Legislative Threshold (89.34 gCO2eq/MJ)</p>
+              <p className="text-sm text-slate-500">Fleet average vs Legislative Threshold ({DNV_REQUIRED_GHG_INTENSITY_2025.toFixed(4)} {UNITS.intensity})</p>
             </div>
           </div>
           <div className="h-[320px]">
@@ -202,9 +216,9 @@ export default function Dashboard() {
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col hover:shadow-md transition-shadow">
           <h3 className="text-lg font-semibold text-slate-900 mb-6 border-b border-slate-100 pb-4">Flexibility Operations</h3>
           <div className="space-y-6 flex-1">
-            <MechanismRow label="Banked Surplus (2025)" value="+0.00" total={Math.max(Math.abs(kpiData.totalAcb), 1).toFixed(2)} color="bg-emerald-500" />
-            <MechanismRow label="Borrowed Amount (2025)" value="-800.00" total={Math.max(kpiData.totalBorrowingCap, 1).toFixed(2)} color="bg-amber-500" />
-            <MechanismRow label="Sub-Fleet Pool Transfer (2025)" value="+1200.00" total={Math.max(Math.abs(kpiData.totalIcb), 1).toFixed(2)} color="bg-blue-500" />
+            <MechanismRow label="Banked Surplus (2025)" value={`${flexStats.bankedAmount > 0 ? '+' : ''}${flexStats.bankedAmount.toFixed(2)}`} total={Math.max(Math.abs(kpiData.totalAcb), 1).toFixed(2)} color="bg-emerald-500" />
+            <MechanismRow label="Borrowed Amount (2025)" value={`${flexStats.borrowedAmount > 0 ? '-' : ''}${Math.abs(flexStats.borrowedAmount).toFixed(2)}`} total={Math.max(kpiData.totalBorrowingCap, 1).toFixed(2)} color="bg-amber-500" />
+            <MechanismRow label="Sub-Fleet Pool Transfer (2025)" value={`${flexStats.pooledTransfer > 0 ? '+' : ''}${flexStats.pooledTransfer.toFixed(2)}`} total={Math.max(Math.abs(kpiData.totalIcb), 1).toFixed(2)} color="bg-blue-500" />
           </div>
             
           <div className="mt-8 p-4 bg-amber-50 rounded-xl border border-amber-200 flex gap-3 items-start shadow-sm">
@@ -235,7 +249,7 @@ export default function Dashboard() {
                 <th className="px-6 py-4">Vessel Name</th>
                 <th className="px-6 py-4">IMO Number</th>
                 <th className="px-6 py-4">Ship Type</th>
-                <th className="px-6 py-4 text-right">ICB Extrapolation (MJ)</th>
+                <th className="px-6 py-4 text-right">ICB Extrapolation (gCO2eq)</th>
                 <th className="px-6 py-4">Regulatory Status</th>
                 <th className="px-6 py-4">DoC Pipeline</th>
                 <th className="px-6 py-4"></th>
@@ -329,7 +343,7 @@ function MechanismRow({ label, value, total, color }: any) {
     <div>
       <div className="flex justify-between text-sm mb-2">
         <span className="font-semibold text-slate-700">{label}</span>
-        <span className="text-slate-900 font-bold">{value} MJ</span>
+        <span className="text-slate-900 font-bold">{value} gCO2eq</span>
       </div>
       <div className="h-2.5 w-full bg-slate-100 rounded-full overflow-hidden shadow-inner border border-slate-200/50">
         <div className={`h-full ${color} rounded-full transition-all duration-1000 ease-out`} style={{ width: `${percentage}%` }}></div>
@@ -340,7 +354,7 @@ function MechanismRow({ label, value, total, color }: any) {
 
 function buildYearTrajectory(rows: any[]) {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const values = Array.isArray(rows) ? rows.map((r) => Number(r.actualIntensity ?? 89.34)) : [];
+  const values = Array.isArray(rows) ? rows.map((r) => Number(r.actualIntensity ?? DNV_REQUIRED_GHG_INTENSITY_2025)) : [];
   if (values.length === 0) return fleetData;
 
   const avg = values.reduce((a, b) => a + b, 0) / values.length;
@@ -349,6 +363,6 @@ function buildYearTrajectory(rows: any[]) {
   return months.map((month, idx) => ({
     month,
     intensity: Number((avg + seasonalOffsets[idx]).toFixed(2)),
-    target: 89.34
+    target: Number(DNV_REQUIRED_GHG_INTENSITY_2025.toFixed(4))
   }));
 }

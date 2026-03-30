@@ -1,7 +1,7 @@
 # FuelEU Control Tower (MVP): MBA Capstone Final Report
 
 **Project Title**: FuelEU Control Tower — Pooling, Banking, and Borrowing Platform  
-**Version**: v1.0.0-MVP (per `CAPSTONE_PROGRESS.md`)  
+**Version**: v1.0.2-MVP (per `CAPSTONE_PROGRESS.md`)  
 **Date**: 2026-03-30  
 
 ## Executive Summary

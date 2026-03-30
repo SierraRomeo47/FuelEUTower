@@ -1,7 +1,7 @@
 # FuelEU Control Tower: Capstone Project Progress Tracker
 
 **Target Framework**: IIM Level Capstone Project
-**Current Version**: `v1.0.1-MVP-PolicyHardening`
+**Current Version**: `v1.0.2-MVP-UnitAndDemoHardening`
 **Last Updated**: March 30, 2026
 
 ---
@@ -49,6 +49,7 @@ The architecture, codebase, and integrations are functionally locked!
 ---
 
 ## 🔄 Version History
+*   **v1.0.2** (`2026-03-30`): Completed unit and formula hardening across workstreams. Enforced Annex IV Part A/Part B unit-consistent calculations for compliance and penalty exposure, aligned frontend labels/contracts to explicit units (`gCO2eq`, `gCO2eq/MJ`, `MJ`, `EUR`), removed hardcoded dashboard flexibility values in favor of ledger-derived figures, and added a deterministic clean production demo startup script (`npm run start:clean`) to avoid stale chunk regressions during live demos.
 *   **v1.0.1** (`2026-03-30`): Applied policy-hardening patch across flexibility flows. Added explicit Banking/Borrowing/Pooling eligibility checks (cap limits, mutual exclusivity, one-pool-per-year, non-positive banking lockouts, no consecutive borrowing guard), structured conflict responses, and correlated `audit_event` inserts. Confirmed FE↔BE communication through connected-browser functional sweep across dashboard, fleet, flexibility, ledger, import, doc-tracker, and settings modules.
 *   **v1.0.0** (`2026-03-30`): Finalized XML Data Pipeline! Connected NextJS multipart form transfers to robust Jackson unmarshalling structures dynamically allocating MJ boundaries inside the SQL DB!
 *   **v0.9.5** (`2026-03-30`): Executed core mathematical flexibility workflows. Wired up Next.js banking/borrowing modules directly to Java backend using robust isolated persistence mappings.

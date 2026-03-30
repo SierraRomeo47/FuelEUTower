@@ -15,7 +15,7 @@
 
 **Frontend**:
 - `cd apps/web`
-- `npm run dev`
+- `npm run start:clean`
 
 ### 2) Demo narrative (what you say)
 “FuelEU pushes fleets to meet GHG intensity limits. The hard part isn’t one calculation—it’s operating compliance across vessel-years with auditability. This control tower ingests structured XML/XLSX inputs and lets us execute flexibility actions (bank/borrow/pool) under guardrails.”

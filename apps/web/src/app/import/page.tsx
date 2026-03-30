@@ -32,8 +32,11 @@ export default function ImportCenter() {
       });
 
       if (res.ok) {
+        const payload = await res.json().catch(() => null);
         toast.success('Ingestion Pipeline Successful', {
-          description: `Successfully parsed and merged THETIS-MRV metrics into PostgreSQL.`
+          description: payload?.ledgerRowsApplied != null
+            ? `Parsed file and applied ${payload.ledgerRowsApplied}/${payload.ledgerRowsFound} ledger override rows.`
+            : `Successfully parsed and merged THETIS-MRV metrics into PostgreSQL.`
         });
       } else {
         toast.error('Pipeline Failed', { description: 'Backend validation rejected the dataset.' });
@@ -83,6 +86,9 @@ export default function ImportCenter() {
               <h3 className="text-xl font-bold text-slate-900 mb-2">Drag & Drop Legacy Workbooks</h3>
               <p className="text-slate-500 max-w-sm mb-8 leading-relaxed">
                 Upload your existing <code>.xlsx</code> Phase 1 files or standard THETIS-MRV <code>.xml</code> exports. Our parsing engine automatically digitizes your fleet data.
+              </p>
+              <p className="text-xs text-slate-500 max-w-sm mb-4">
+                Unit convention: intensity = <code>gCO2eq/MJ</code>, balances = <code>gCO2eq</code>, energy = <code>MJ</code>, CB marketplace = <code>CB (tCO2eq)</code>.
               </p>
               <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold shadow-md transition-all active:scale-95 pointer-events-none">
                 Select Files

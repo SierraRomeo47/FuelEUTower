@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { apiUrl } from '@/lib/api';
+import { asArray, fetchJson } from '@/lib/http';
 import { toast } from 'sonner';
 
 type DocRow = {
@@ -21,11 +22,14 @@ export default function DocTracker() {
   const [docStatus, setDocStatus] = useState<DocRow[]>([]);
   const [updatingVesselId, setUpdatingVesselId] = useState<string | null>(null);
 
-  const fetchStatuses = () => {
-    fetch(apiUrl('/api/v1/doc-tracker/statuses?year=2025'))
-      .then(r => r.json())
-      .then((rows: any[]) => {
-        if (!Array.isArray(rows)) return;
+  const fetchStatuses = async () => {
+    try {
+      const payload = await fetchJson('/api/v1/doc-tracker/statuses?year=2025');
+      const rows = asArray(payload);
+      if (rows.length === 0) {
+        setDocStatus([]);
+        return;
+      }
         setDocStatus(rows.map((row) => ({
           vesselId: row.vesselId,
           imo: (row.imo ?? 'N/A').toString().replace('IMO', ''),
@@ -37,12 +41,11 @@ export default function DocTracker() {
           canAdvance: !!row.canAdvance,
           nextStatus: row.nextStatus
         })));
-      })
-      .catch(() => {
-        toast.error('Doc Tracker Sync Failed', {
-          description: 'Could not load backend DoC statuses.'
-        });
+    } catch {
+      toast.error('Doc Tracker Sync Failed', {
+        description: 'Could not load backend DoC statuses.'
       });
+    }
   };
 
   useEffect(() => {

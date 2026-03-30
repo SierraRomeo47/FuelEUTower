@@ -57,6 +57,12 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DashboardVessel'
 
   /api/v1/dashboard/kpis:
     get:
@@ -65,6 +71,10 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceLedgerSummary'
 
   /api/v1/compliance-ledger/rows:
     get:
@@ -81,6 +91,45 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ComplianceLedgerRow'
+  /api/v1/compliance-ledger/rows/{vesselId}:
+    put:
+      summary: Update a vessel ledger row for testing/simulation overrides
+      operationId: updateComplianceLedgerRow
+      parameters:
+        - in: path
+          name: vesselId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: year
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 2025
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ComplianceLedgerRowUpdateRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceLedgerRow'
+        '400':
+          description: Bad Request
 
   /api/v1/compliance-ledger/summary:
     get:
@@ -97,6 +146,10 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceLedgerSummary'
 
   /api/v1/imports/upload:
     post:
@@ -130,6 +183,249 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlexibilityExecuteResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlexibilityExecuteResponse'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FlexibilityExecuteResponse'
+
+  /api/v1/flexibility/eligibility:
+    get:
+      summary: List per-vessel action eligibility for bank/borrow/pool
+      operationId: listFlexibilityEligibility
+      parameters:
+        - in: query
+          name: year
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 2025
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FlexibilityEligibilityRow'
+
+  /api/v1/flexibility/pools:
+    get:
+      summary: List pools and transfer summary for reporting year
+      operationId: listFlexibilityPools
+      parameters:
+        - in: query
+          name: year
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 2025
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Create a simple pool transfer between source and target vessels
+      operationId: createPoolTransfer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PoolTransferCreateRequest'
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+        '409':
+          description: Conflict
+
+  /api/v1/flexibility/pools/{poolId}:
+    put:
+      summary: Update transfer amount for existing draft pool
+      operationId: updatePoolTransfer
+      parameters:
+        - in: path
+          name: poolId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PoolTransferUpdateRequest'
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+        '404':
+          description: Not Found
+    delete:
+      summary: Delete draft/cancelled pool and cascade participant allocations
+      operationId: deletePool
+      parameters:
+        - in: path
+          name: poolId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Not Found
+        '409':
+          description: Conflict
+
+  /api/v1/flexibility/pools/{poolId}/cancel:
+    post:
+      summary: Cancel pool and clear participants/allocations
+      operationId: cancelPool
+      parameters:
+        - in: path
+          name: poolId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Not Found
+
+  /api/v1/flexibility/pools/{poolId}/allocations:
+    post:
+      summary: Add participant allocation to existing draft pool
+      operationId: addPoolAllocation
+      parameters:
+        - in: path
+          name: poolId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PoolParticipantAllocationRequest'
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Bad Request
+        '404':
+          description: Not Found
+        '409':
+          description: Conflict
+
+  /api/v1/flexibility/pools/{poolId}/participants/{vesselId}:
+    delete:
+      summary: Remove participant allocation from draft pool
+      operationId: removePoolParticipant
+      parameters:
+        - in: path
+          name: poolId
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: path
+          name: vesselId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Not Found
+        '409':
+          description: Conflict
+
+  /api/v1/flexibility/strategy/recommendations:
+    get:
+      summary: Rank cost-based flexibility recommendation per vessel
+      operationId: listFlexibilityStrategyRecommendations
+      parameters:
+        - in: query
+          name: year
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 2025
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FlexibilityStrategyRecommendation'
+
+  /api/v1/marketplace/cb-rate:
+    get:
+      summary: Fetch latest indicative CB market rate
+      operationId: getCbMarketplaceRate
+      parameters:
+        - in: query
+          name: year
+          required: false
+          schema:
+            type: integer
+            format: int32
+            default: 2025
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CbMarketplaceQuote'
+
+  /api/v1/marketplace/purchase:
+    post:
+      summary: Record a CB marketplace purchase for a vessel-year
+      operationId: purchaseCbMarketplace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CbMarketplacePurchaseRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CbMarketplacePurchaseResponse'
+        '400':
+          description: Bad Request
 
   /api/v1/doc-tracker/statuses:
     get:
@@ -200,6 +496,343 @@ components:
           format: uuid
         amount:
           type: number
+          description: |
+            Requested compliance transfer amount in gCO2eq (compliance balance unit).
+            (gCO2eq/MJ intensity difference × MJ in-scope energy = gCO2eq).
+    FlexibilityExecuteResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: SUCCESS, BAD_REQUEST, CONFLICT, or ERROR.
+        message:
+          type: string
+          description: Human-readable policy validation or success message.
+
+    DashboardVessel:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Vessel identifier (IMO or UUID depending on source projection).
+        name:
+          type: string
+        type:
+          type: string
+        icb:
+          type: number
+          format: double
+          description: Initial Compliance Balance in gCO2eq.
+        status:
+          type: string
+          description: Deficit or Compliant.
+
+    ComplianceLedgerRow:
+      type: object
+      properties:
+        vesselId:
+          type: string
+          format: uuid
+        imo:
+          type: string
+        name:
+          type: string
+        vesselType:
+          type: string
+        buildYear:
+          type: integer
+          format: int32
+          nullable: true
+        flagState:
+          type: string
+        energyInScope:
+          type: number
+          format: double
+          description: Energy in scope in MJ.
+        actualIntensity:
+          type: number
+          format: double
+          description: Actual GHG intensity in gCO2eq/MJ.
+        targetIntensity:
+          type: number
+          format: double
+          description: Regulatory target GHG intensity in gCO2eq/MJ.
+        icb:
+          type: number
+          format: double
+          description: Initial Compliance Balance in gCO2eq.
+        vcb:
+          type: number
+          format: double
+          nullable: true
+          description: Verified Compliance Balance in gCO2eq.
+        borrowedAmount:
+          type: number
+          format: double
+          description: Borrowed compliance balance in gCO2eq.
+        bankedAmount:
+          type: number
+          format: double
+          description: Banked compliance balance in gCO2eq.
+        reportingYear:
+          type: integer
+          format: int32
+        status:
+          type: string
+          description: Deficit or Compliant.
+
+    ComplianceLedgerSummary:
+      type: object
+      properties:
+        totalIcb:
+          type: number
+          format: double
+          description: Fleet aggregate ICB in gCO2eq.
+        totalAcb:
+          type: number
+          format: double
+          description: Fleet aggregate ACB/VCB proxy in gCO2eq.
+        totalBorrowingCap:
+          type: number
+          format: double
+          description: Fleet aggregate borrowing cap in gCO2eq.
+        penaltyExposure:
+          type: number
+          format: double
+          description: |
+            Estimated FuelEU penalty exposure in EUR.
+            Computed using Annex IV Part B:
+            |complianceBalance[gCO2eq]| / (actualIntensity[gCO2eq/MJ] * 41,000[MJ/tVLSFOeq]) * 2,400[EUR/tVLSFOeq].
+        rowCount:
+          type: integer
+          format: int32
+        year:
+          type: integer
+          format: int32
+
+    ComplianceLedgerRowUpdateRequest:
+      type: object
+      properties:
+        energyInScope:
+          type: number
+          format: double
+          description: Override energy in scope (MJ).
+        actualIntensity:
+          type: number
+          format: double
+          description: Override actual intensity (gCO2eq/MJ).
+        targetIntensity:
+          type: number
+          format: double
+          description: Override target intensity (gCO2eq/MJ).
+        icb:
+          type: number
+          format: double
+          description: Override initial compliance balance (gCO2eq).
+        vcb:
+          type: number
+          format: double
+          nullable: true
+          description: Override verified compliance balance (gCO2eq).
+        bankedAmount:
+          type: number
+          format: double
+          description: Override banked amount for test workflows (gCO2eq).
+        borrowedAmount:
+          type: number
+          format: double
+          description: Override borrowed amount for test workflows (gCO2eq).
+
+    FlexibilityEligibilityRow:
+      type: object
+      properties:
+        vesselId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        imoNumber:
+          type: string
+        effectiveBalance:
+          type: number
+          format: double
+          description: Effective compliance balance in gCO2eq used for policy checks.
+        borrowingCap:
+          type: number
+          format: double
+          description: Borrowing cap in gCO2eq.
+        hasPoolMembership:
+          type: boolean
+        hasBorrowThisYear:
+          type: boolean
+        hasBankThisYear:
+          type: boolean
+        purchasedCbGco2eq:
+          type: number
+          format: double
+          description: CB purchased in marketplace converted to compliance balance units (gCO2eq).
+        canBank:
+          type: boolean
+        canBorrow:
+          type: boolean
+        canPool:
+          type: boolean
+
+    CbMarketplaceQuote:
+      type: object
+      properties:
+        year:
+          type: integer
+          format: int32
+        source:
+          type: string
+        symbol:
+          type: string
+        priceUsdPerToken:
+          type: number
+          format: double
+          description: Indicative token spot in USD per tCO2eq token.
+        fxEurUsd:
+          type: number
+          format: double
+        priceEurPerGco2eq:
+          type: number
+          format: double
+          description: Price in EUR per gCO2eq of compliance balance.
+        priceEurPerCb:
+          type: number
+          format: double
+          description: Price in EUR per CB (1 CB = 1 tCO2eq in marketplace convention).
+        priceEurPerTco2eq:
+          type: number
+          format: double
+        cbToGco2eq:
+          type: number
+          format: double
+          description: Conversion constant for marketplace CB to compliance balance units (1 CB = 1,000,000 gCO2eq).
+        disclaimer:
+          type: string
+
+    CbMarketplacePurchaseRequest:
+      type: object
+      required: [vesselId]
+      properties:
+        vesselId:
+          type: string
+          format: uuid
+        amountCb:
+          type: number
+          format: double
+          description: CB amount to buy (1 CB = 1 tCO2eq).
+        amountGco2eq:
+          type: number
+          format: double
+          description: Legacy field - amount in gCO2eq.
+        year:
+          type: integer
+          format: int32
+          default: 2025
+
+    CbMarketplacePurchaseResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        message:
+          type: string
+        amountGco2eq:
+          type: number
+          format: double
+          description: Purchased amount converted to compliance balance units (gCO2eq).
+        amountCb:
+          type: number
+          format: double
+          description: Purchased marketplace amount in CB/tCO2eq units.
+        cbToGco2eq:
+          type: number
+          format: double
+          description: Conversion constant for marketplace CB to compliance units.
+        unitPriceEurPerCb:
+          type: number
+          format: double
+        unitPriceEurPerGco2eq:
+          type: number
+          format: double
+        totalCostEur:
+          type: number
+          format: double
+        source:
+          type: string
+        symbol:
+          type: string
+
+    PoolParticipantAllocationRequest:
+      type: object
+      required: [vesselId, transfer]
+      properties:
+        vesselId:
+          type: string
+          format: uuid
+        transfer:
+          type: number
+          format: double
+          description: Participant pool allocation in gCO2eq (positive contributor, negative receiver).
+
+    FlexibilityStrategyRecommendation:
+      type: object
+      properties:
+        vesselId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        effectiveBalance:
+          type: number
+          format: double
+          description: Current effective compliance balance in gCO2eq.
+        recommendation:
+          type: string
+          description: Recommended action label (e.g., POOL_RECEIVE, BUY_CB, BORROW, BANK_SURPLUS).
+        estimatedPenaltyCostEur:
+          type: number
+          format: double
+        estimatedBuyCostEur:
+          type: number
+          format: double
+        estimatedBorrowCostEur:
+          type: number
+          format: double
+        benchmarkPriceEurPerCb:
+          type: number
+          format: double
+
+    PoolTransferCreateRequest:
+      type: object
+      required: [sourceVesselId, targetVesselId, amount]
+      properties:
+        sourceVesselId:
+          type: string
+          format: uuid
+        targetVesselId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: double
+          description: Pool transfer amount in gCO2eq.
+        year:
+          type: integer
+          format: int32
+          default: 2025
+
+    PoolTransferUpdateRequest:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          type: number
+          format: double
+          description: Updated transfer amount in gCO2eq.
 
     DocStatusUpdateRequest:
       type: object
