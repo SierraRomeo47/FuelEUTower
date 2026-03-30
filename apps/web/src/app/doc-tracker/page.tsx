@@ -1,16 +1,68 @@
 "use client";
 
-import React from 'react';
-import { ShieldCheck, CheckCircle2, Clock, Check } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { ShieldCheck } from 'lucide-react';
+import { apiUrl } from '@/lib/api';
+import { toast } from 'sonner';
 
-const mockDoCStatus = [
-  { imo: '9123456', name: 'Albatross Explorer', status: 'Pending Auditor', step: 1 },
-  { imo: '9987654', name: 'Nordic Supplier', status: 'DoC Issued (Final)', step: 4 },
-  { imo: '9345678', name: 'Pacific Horizon', status: 'In Review', step: 2 },
-  { imo: '9554411', name: 'Global Voyager', status: 'Missing Flexibility', step: 0 },
-];
+type RegistryVessel = {
+  id: string;
+  imoNumber?: string;
+  name?: string;
+  vesselType?: string;
+  buildYear?: number;
+  flagState?: string;
+};
+
+type DocRow = {
+  imo: string;
+  name: string;
+  status: string;
+  step: number;
+};
+
+function computeDocStatus(v: RegistryVessel): DocRow {
+  const vesselType = (v.vesselType ?? 'Container').toLowerCase();
+  const buildYear = v.buildYear ?? 2018;
+  const age = Math.max(0, 2025 - buildYear);
+
+  // Deterministic rule-of-thumb progression for MVP demo.
+  let step = 1;
+  if (vesselType === 'lng' || vesselType === 'ro-ro' || age <= 8) step = 2;
+  if (vesselType === 'container' && age <= 6) step = 3;
+  if ((v.flagState ?? '').toUpperCase() === 'MALTA' && age <= 10) step = 4;
+
+  const statusByStep = ['Missing Flexibility', 'Pending Auditor', 'In Review', 'Verification Complete', 'DoC Issued (Final)'];
+  return {
+    imo: (v.imoNumber ?? 'N/A').replace('IMO', ''),
+    name: v.name ?? 'Unnamed Vessel',
+    status: statusByStep[step],
+    step
+  };
+}
 
 export default function DocTracker() {
+  const [docStatus, setDocStatus] = useState<DocRow[]>([]);
+
+  useEffect(() => {
+    fetch(apiUrl('/api/v1/registry/vessels'))
+      .then(r => r.json())
+      .then((vessels: RegistryVessel[]) => {
+        if (!Array.isArray(vessels) || vessels.length === 0) return;
+        setDocStatus(vessels.map(computeDocStatus));
+      })
+      .catch(() => {
+        toast.warning('Doc Tracker Using Local Fallback', {
+          description: 'Registry API unavailable, showing fallback DoC progression.'
+        });
+        setDocStatus([
+          computeDocStatus({ id: '1', imoNumber: 'IMO9434761', name: 'MV Baltic Horizon', vesselType: 'Container', buildYear: 2017, flagState: 'Cyprus' }),
+          computeDocStatus({ id: '2', imoNumber: 'IMO9762214', name: 'MV Adriatic Pioneer', vesselType: 'Ro-Ro', buildYear: 2020, flagState: 'Italy' }),
+          computeDocStatus({ id: '3', imoNumber: 'IMO9385420', name: 'MT North Sea Progress', vesselType: 'Tanker', buildYear: 2014, flagState: 'Malta' }),
+        ]);
+      });
+  }, []);
+
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto animate-in fade-in duration-500">
       
@@ -21,7 +73,7 @@ export default function DocTracker() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         
-        {mockDoCStatus.map((v) => (
+        {docStatus.map((v) => (
           <div key={v.imo} className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-shadow flex flex-col">
             <div className="flex justify-between items-start mb-4">
                <div>
