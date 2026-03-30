@@ -1,0 +1,41 @@
+# OS/editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Environment/secrets
+.env
+.env.*
+*.pem
+*.key
+*.p12
+
+# Java/Gradle
+**/build/
+.gradle/
+apps/api/.jdk/
+apps/api/jdk-21.zip
+apps/api/spring.log
+
+# Node/Next
+**/node_modules/
+**/.next/
+**/out/
+npm-debug.log*
+yarn-error.log*
+
+# Python/cache
+__pycache__/
+*.pyc
+
+# Local tooling/runtime
+.local/
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/*.mdc
+
+# Optional large binary study exports
+Study Material/*.zip
+Study Material/*.pdf
+Study Material/*.xlsx

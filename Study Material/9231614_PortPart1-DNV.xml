@@ -1,0 +1,119 @@
+<portEmissions shipImoNumber="9715490">
+  <portEmission>
+    <portName>Beirut</portName>
+    <portCode>LBBEY</portCode>
+    <atd>06-01-2025 23:48:00</atd>
+    <ata>03-01-2025 11:48:00</ata>
+    <countryCode>LB</countryCode>
+  </portEmission>
+  <portEmission>
+    <portName>Thessaloníki</portName>
+    <portCode>GRSKG</portCode>
+    <atd>15-01-2025 12:12:00</atd>
+    <ata>13-01-2025 09:00:00</ata>
+    <countryCode>GR</countryCode>
+    <emissions>
+      <amount>11.8</amount>
+      <emissionFactor>3.206</emissionFactor>
+      <portActivityCode>AT_BERTH</portActivityCode>
+      <measuringUnitCode>M_TONNES</measuringUnitCode>
+      <fuelTypeCode>MDO</fuelTypeCode>
+      <reportTypeConsumption>true</reportTypeConsumption>
+      <lcv>0.0427</lcv>
+    </emissions>
+  </portEmission>
+  <portEmission>
+    <portName>Beirut</portName>
+    <portCode>LBBEY</portCode>
+    <atd>21-01-2025 10:00:00</atd>
+    <ata>19-01-2025 09:12:00</ata>
+    <countryCode>LB</countryCode>
+  </portEmission>
+  <portEmission>
+    <portName>Vasilikos</portName>
+    <portCode>CYVAS</portCode>
+    <atd>28-01-2025 12:06:00</atd>
+    <ata>26-01-2025 05:30:00</ata>
+    <countryCode>CY</countryCode>
+    <emissions>
+      <amount>9.7</amount>
+      <emissionFactor>3.206</emissionFactor>
+      <portActivityCode>AT_BERTH</portActivityCode>
+      <measuringUnitCode>M_TONNES</measuringUnitCode>
+      <fuelTypeCode>MDO</fuelTypeCode>
+      <reportTypeConsumption>true</reportTypeConsumption>
+      <lcv>0.0427</lcv>
+    </emissions>
+  </portEmission>
+  <portEmission>
+    <portName>Az Zawiyah</portName>
+    <portCode>LYZAW</portCode>
+    <atd>21-02-2025 05:36:00</atd>
+    <ata>14-02-2025 08:42:00</ata>
+    <countryCode>LY</countryCode>
+  </portEmission>
+  <portEmission>
+    <portName>Vasilikos</portName>
+    <portCode>CYVAS</portCode>
+    <atd>28-02-2025 03:30:00</atd>
+    <ata>27-02-2025 10:36:00</ata>
+    <countryCode>CY</countryCode>
+    <emissions>
+      <amount>3.8</amount>
+      <emissionFactor>3.206</emissionFactor>
+      <portActivityCode>AT_BERTH</portActivityCode>
+      <measuringUnitCode>M_TONNES</measuringUnitCode>
+      <fuelTypeCode>MDO</fuelTypeCode>
+      <reportTypeConsumption>true</reportTypeConsumption>
+      <lcv>0.0427</lcv>
+    </emissions>
+    <emissions>
+      <amount>3.8</amount>
+      <emissionFactor>3.151</emissionFactor>
+      <portActivityCode>AT_BERTH</portActivityCode>
+      <measuringUnitCode>M_TONNES</measuringUnitCode>
+      <fuelTypeCode>LFO</fuelTypeCode>
+      <reportTypeConsumption>true</reportTypeConsumption>
+      <lcv>0.041</lcv>
+    </emissions>
+  </portEmission>
+  <portEmission>
+    <portName>Agio Theodoroi</portName>
+    <portCode>GRAGT</portCode>
+    <atd>06-03-2025 11:48:00</atd>
+    <ata>04-03-2025 21:42:00</ata>
+    <countryCode>GR</countryCode>
+    <emissions>
+      <amount>10</amount>
+      <emissionFactor>3.206</emissionFactor>
+      <portActivityCode>AT_BERTH</portActivityCode>
+      <measuringUnitCode>M_TONNES</measuringUnitCode>
+      <fuelTypeCode>MDO</fuelTypeCode>
+      <reportTypeConsumption>true</reportTypeConsumption>
+      <lcv>0.0427</lcv>
+    </emissions>
+  </portEmission>
+  <portEmission>
+    <portName>Beirut</portName>
+    <portCode>LBBEY</portCode>
+    <atd>13-03-2025 06:42:00</atd>
+    <ata>09-03-2025 12:48:00</ata>
+    <countryCode>LB</countryCode>
+  </portEmission>
+  <portEmission>
+    <portName>Vasilikos</portName>
+    <portCode>CYVAS</portCode>
+    <atd>17-03-2025 09:30:00</atd>
+    <ata>13-03-2025 22:30:00</ata>
+    <countryCode>CY</countryCode>
+    <emissions>
+      <amount>19.2</amount>
+      <emissionFactor>3.206</emissionFactor>
+      <portActivityCode>AT_BERTH</portActivityCode>
+      <measuringUnitCode>M_TONNES</measuringUnitCode>
+      <fuelTypeCode>MDO</fuelTypeCode>
+      <reportTypeConsumption>true</reportTypeConsumption>
+      <lcv>0.0427</lcv>
+    </emissions>
+  </portEmission>
+</portEmissions>

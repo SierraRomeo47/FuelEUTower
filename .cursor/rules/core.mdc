@@ -1,0 +1,11 @@
+---
+description: FuelEU Platform Core Domain Architecture Rules
+globs: "**/*.java, **/*.ts, **/*.tsx"
+---
+
+# FuelEU Architecture Constraints
+1. **NO BUSINESS LOGIC IN THE UI:** Do not perform math or rule evaluation inside Next.js components. Call the backend API endpoints.
+2. **Modular Integrity:** Spring Boot code must strictly align under defined modules. Avoid cyclic boundaries between `domain.compliance` and `domain.flexibility`.
+3. **Strict Security:** Every REST endpoint in Java MUST define explicit `@PreAuthorize` rules. Security by default.
+4. **Immutability of Fact:** All critical module calculations MUST be immutable per timestamp. Once a DoC or Penalty relies on a metric, the entity state locks.
+5. **No Implicit Returns:** Ensure typing is strict in TypeScript (`tsconfig.json` `strict: true`). Use Zod schemas tightly matching the OpenAPI spec.

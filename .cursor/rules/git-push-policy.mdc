@@ -1,0 +1,15 @@
+---
+description: Git workflow and push discipline
+globs: "**/*"
+---
+
+# Git Workflow Rules (FuelEU Tower)
+
+1. **Major Change Definition:** Treat backend policy logic, OpenAPI contract updates, database migrations, and frontend behavior changes as major changes.
+2. **Commit After Major Change:** After each major change is implemented and validated, create a commit with a clear message describing intent and impact.
+3. **Push Immediately After Commit:** Push the current branch to `origin` right after each major-change commit.
+4. **No Force Push to Main:** Never use force push on `main`. Use regular push and pull request flow when needed.
+5. **Verification Before Push:** Run applicable checks before pushing:
+   - Backend: `apps/api/gradlew.bat -p apps/api test`
+   - Frontend: `npm run build` in `apps/web`
+6. **Track Version Notes:** For major changes affecting behavior, update `CAPSTONE_PROGRESS.md` version history in the same commit.

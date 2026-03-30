@@ -1,0 +1,2 @@
+ALTER TABLE vessel ADD COLUMN build_year INTEGER;
+ALTER TABLE vessel ADD COLUMN flag_state VARCHAR(100);

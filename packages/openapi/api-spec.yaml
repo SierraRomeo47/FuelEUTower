@@ -1,0 +1,113 @@
+openapi: 3.0.3
+info:
+  title: FuelEU Control Tower API
+  version: 1.0.0
+  description: OpenAPI Specification for FuelEU Maritime Compliance Platform ensuring deterministic generation for the UI Next.js client.
+servers:
+  - url: http://localhost:8082
+    description: Local development server
+paths:
+  /api/v1/registry/vessels:
+    get:
+      summary: List all registered vessels
+      operationId: listRegistryVessels
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Register a new vessel
+      operationId: registerVessel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VesselDTO'
+      responses:
+        '200':
+          description: OK
+
+  /api/v1/dashboard/vessels:
+    get:
+      summary: List high-risk vessels for executive dashboard
+      operationId: getHighRiskDashboardVessels
+      responses:
+        '200':
+          description: OK
+
+  /api/v1/dashboard/kpis:
+    get:
+      summary: Retrieve global KPI snapshot for dashboard
+      operationId: getDashboardKpis
+      responses:
+        '200':
+          description: OK
+
+  /api/v1/imports/upload:
+    post:
+      summary: Upload and process a FuelEU XLSX or XML file
+      operationId: uploadImportFile
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: OK
+
+  /api/v1/flexibility/execute:
+    post:
+      summary: Execute a banking/borrowing/pooling record write
+      operationId: executeFlexibilityAction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FlexibilityExecuteRequest'
+      responses:
+        '200':
+          description: OK
+components:
+  schemas:
+    VesselDTO:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        imoNumber:
+          type: string
+        name:
+          type: string
+        vesselType:
+          type: string
+        iceClass:
+          type: string
+        buildYear:
+          type: integer
+          format: int32
+          nullable: true
+        flagState:
+          type: string
+
+    FlexibilityExecuteRequest:
+      type: object
+      required: [type, vesselId, amount]
+      properties:
+        type:
+          type: string
+          description: Action type
+          enum: [bank, borrow, pool]
+        vesselId:
+          type: string
+          format: uuid
+        amount:
+          type: number

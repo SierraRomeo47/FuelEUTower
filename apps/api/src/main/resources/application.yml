@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: fueleu-control-tower
+  datasource:
+    url: jdbc:postgresql://localhost:5438/fueleu_app
+    username: fueleu_user
+    password: fueleu_password
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+logging:
+  level:
+    org.springframework: INFO
+    com.fueleu: DEBUG
+
+server:
+  port: 8082
